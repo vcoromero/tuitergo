@@ -17,7 +17,7 @@ func ProcessToken(tk string, JWTSign string) (*models.Claim, bool, string, error
 
 	splitToken := strings.Split(tk, "Bearer")
 	if len(splitToken) != 2 {
-		return &claims, false, string(""), errors.New("Invalid token format")
+		return &claims, false, string(""), errors.New("invalid token format")
 	}
 
 	tk = strings.TrimSpace(splitToken[1])
@@ -31,7 +31,7 @@ func ProcessToken(tk string, JWTSign string) (*models.Claim, bool, string, error
 	}
 
 	if !tkn.Valid {
-		return &claims, false, string(""), errors.New("Invalid token")
+		return &claims, false, string(""), errors.New("invalid token")
 	}
 
 	return &claims, false, string(""), nil
