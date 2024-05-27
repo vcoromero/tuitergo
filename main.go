@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/vcoromero/tuitergo/awsgo"
 	"github.com/vcoromero/tuitergo/db"
 	"github.com/vcoromero/tuitergo/handlers"
@@ -14,6 +16,7 @@ import (
 )
 
 func main() {
+	lambda.Start(CallLambda)
 }
 
 func CallLambda(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -45,23 +48,23 @@ func CallLambda(ctx context.Context, request events.APIGatewayProxyRequest) (*ev
 	}
 
 	path := strings.Replace(request.PathParameters["tuitergo"], os.Getenv("UrlPrefix"), "", -1)
-
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("path"), path)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("method"), request.HTTPMethod)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("user"), SecretModel.Username)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("password"), SecretModel.Password)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("host"), SecretModel.Host)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("database"), SecretModel.Database)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("jwtSign"), SecretModel.JWTSign)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("body"), request.Body)
-	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("bucketName"), os.Getenv("BucketName"))
+	fmt.Println("Resolved path:", path)
+	ctx = context.WithValue(ctx, models.Key("path"), path)
+	ctx = context.WithValue(ctx, models.Key("method"), request.HTTPMethod)
+	ctx = context.WithValue(ctx, models.Key("user"), SecretModel.Username)
+	ctx = context.WithValue(ctx, models.Key("password"), SecretModel.Password)
+	ctx = context.WithValue(ctx, models.Key("host"), SecretModel.Host)
+	ctx = context.WithValue(ctx, models.Key("database"), SecretModel.Database)
+	ctx = context.WithValue(ctx, models.Key("jwtSign"), SecretModel.JWTSign)
+	ctx = context.WithValue(ctx, models.Key("body"), request.Body)
+	ctx = context.WithValue(ctx, models.Key("bucketName"), os.Getenv("BucketName"))
 
 	// Check database connection
-	err = db.ConnectDB(awsgo.Ctx)
+	err = db.ConnectDB(ctx)
 	if err != nil {
 		res = &events.APIGatewayProxyResponse{
 			StatusCode: 400,
-			Body:       "Error  conectando en la db " + err.Error(),
+			Body:       "Error conectando en la db " + err.Error(),
 			Headers: map[string]string{
 				"Content-type": "application/json",
 			},
@@ -69,7 +72,7 @@ func CallLambda(ctx context.Context, request events.APIGatewayProxyRequest) (*ev
 		return res, nil
 	}
 
-	resAPI := handlers.Handlers(awsgo.Ctx, request)
+	resAPI := handlers.Handlers(ctx, request)
 	if resAPI.CustomResponse == nil {
 		res = &events.APIGatewayProxyResponse{
 			StatusCode: resAPI.Status,
@@ -82,7 +85,6 @@ func CallLambda(ctx context.Context, request events.APIGatewayProxyRequest) (*ev
 	} else {
 		return resAPI.CustomResponse, nil
 	}
-
 }
 
 func ValidatedParameters() bool {

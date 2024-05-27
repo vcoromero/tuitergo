@@ -23,6 +23,6 @@ func GetSecret(secretName string) (models.Secret, error) {
 	}
 
 	json.Unmarshal([]byte(*key.SecretString), &secretData)
-	fmt.Println("> Lectura de secret OK" + secretName)
+	fmt.Println("> Lectura de secret OK " + secretName)
 	return secretData, nil
 }

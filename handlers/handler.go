@@ -11,36 +11,54 @@ import (
 )
 
 func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models.ResponseAPI {
-	fmt.Println("Voy a procesar " + ctx.Value(models.Key("path")).(string) + " > " + ctx.Value(models.Key("method")).(string))
+	path := ctx.Value(models.Key("path")).(string)
+	method := ctx.Value(models.Key("method")).(string)
+	fmt.Println("Voy a procesar", path, ">", method)
 
 	var res models.ResponseAPI
 	res.Status = 400
 
 	isOk, statusCode, msg, _ := authorizationValidate(ctx, request)
 	if !isOk {
+		fmt.Println("Authorization failed")
 		res.Status = statusCode
 		res.Message = msg
 		return res
 	}
 
-	switch ctx.Value(models.Key("method")).(string) {
+	switch method {
 	case "POST":
-		switch ctx.Value(models.Key("path")).(string) {
+		fmt.Println("Processing POST request")
+		switch path {
 		case "register":
+			fmt.Println("Handling register route")
 			return routers.Register(ctx)
+		default:
+			fmt.Println("Unknown POST route")
 		}
 	case "GET":
-		switch ctx.Value(models.Key("path")).(string) {
-		//
+		fmt.Println("Processing GET request")
+		switch path {
+		// Añade tus rutas GET aquí
+		default:
+			fmt.Println("Unknown GET route")
 		}
 	case "PUT":
-		switch ctx.Value(models.Key("path")).(string) {
-		//
+		fmt.Println("Processing PUT request")
+		switch path {
+		// Añade tus rutas PUT aquí
+		default:
+			fmt.Println("Unknown PUT route")
 		}
 	case "DELETE":
-		switch ctx.Value(models.Key("path")).(string) {
-		//
+		fmt.Println("Processing DELETE request")
+		switch path {
+		// Añade tus rutas DELETE aquí
+		default:
+			fmt.Println("Unknown DELETE route")
 		}
+	default:
+		fmt.Println("Invalid method")
 	}
 	res.Message = "Message invalid"
 	return res
@@ -48,25 +66,29 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 
 func authorizationValidate(ctx context.Context, request events.APIGatewayProxyRequest) (bool, int, string, models.Claim) {
 	path := ctx.Value(models.Key("path")).(string)
+	fmt.Println("Authorization validation for path:", path)
 	if path == "register" || path == "login" || path == "getAvatar" || path == "getBanner" {
+		fmt.Println("Public endpoint, no authorization required")
 		return true, 200, "", models.Claim{}
 	}
 
 	token := request.Headers["Authorization"]
+	fmt.Println("Authorization header:", token)
 	if len(token) == 0 {
+		fmt.Println("Authorization token required but not found")
 		return false, 401, "required token", models.Claim{}
 	}
 
 	claim, isOK, msg, err := jwt.ProcessToken(token, ctx.Value(models.Key("jwtSign")).(string))
 	if !isOK {
 		if err != nil {
-			fmt.Println("token error: " + err.Error())
+			fmt.Println("Token error: " + err.Error())
 			return false, 401, err.Error(), models.Claim{}
 		} else {
-			fmt.Println("token error: " + err.Error())
-			return false, 401, err.Error(), models.Claim{}
+			fmt.Println("Token invalid: " + msg)
+			return false, 401, msg, models.Claim{}
 		}
 	}
-	fmt.Println("token ok!")
+	fmt.Println("Token valid")
 	return true, 200, msg, *claim
 }
