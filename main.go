@@ -44,7 +44,7 @@ func CallLambda(ctx context.Context, request events.APIGatewayProxyRequest) (*ev
 		return res, nil
 	}
 
-	path := strings.Replace(request.PathParameters["tuiter"], os.Getenv("UrlPrefix"), "", -1)
+	path := strings.Replace(request.PathParameters["tuitergo"], os.Getenv("UrlPrefix"), "", -1)
 
 	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("path"), path)
 	awsgo.Ctx = context.WithValue(awsgo.Ctx, models.Key("method"), request.HTTPMethod)
