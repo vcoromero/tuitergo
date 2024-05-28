@@ -15,13 +15,6 @@ import (
 )
 
 func main() {
-	// Initialize AWS
-	awsgo.InitializeAWS()
-
-	// Create unique email index
-	db.CreateUniqueEmailIndex()
-
-	// Start Lambda
 	lambda.Start(CallLambda)
 }
 
