@@ -18,10 +18,11 @@ func Register(ctx context.Context) models.ResponseAPI {
 	body := ctx.Value(models.Key("body")).(string)
 	err := json.Unmarshal([]byte(body), &t)
 	if err != nil {
-		r.Message = err.Error()
+		r.Message = "Error parsing request body: " + err.Error()
 		fmt.Println(r.Message)
 		return r
 	}
+
 	if len(t.Email) == 0 {
 		r.Message = "Must have an Email"
 		fmt.Println(r.Message)
@@ -29,19 +30,21 @@ func Register(ctx context.Context) models.ResponseAPI {
 	}
 
 	if len(t.Password) < 6 {
-		r.Message = "Must have an Email"
+		r.Message = "Password must be at least 6 characters long"
 		fmt.Println(r.Message)
 		return r
 	}
+
 	_, found, _ := db.CheckedIfUserExist(t.Email)
 	if found {
 		r.Message = "There is an user registered with this email"
 		fmt.Println(r.Message)
 		return r
 	}
+
 	_, status, err := db.InsertUser(t)
 	if err != nil {
-		r.Message = "Occured an error trying to insert an user " + err.Error()
+		r.Message = "An error occurred trying to insert the user: " + err.Error()
 		fmt.Println(r.Message)
 		return r
 	}
@@ -51,6 +54,7 @@ func Register(ctx context.Context) models.ResponseAPI {
 		fmt.Println(r.Message)
 		return r
 	}
+
 	r.Status = 200
 	r.Message = "User registered!"
 	fmt.Println(r.Message)
