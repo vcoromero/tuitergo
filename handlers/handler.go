@@ -33,6 +33,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 		case "register":
 			fmt.Println("Handling register route")
 			return routers.Register(ctx)
+		case "login":
+			return routers.Login(ctx)
 		default:
 			fmt.Println("Unknown POST route")
 		}
