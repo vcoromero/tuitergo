@@ -5,3 +5,4 @@ bootstrap
 tuitergo
 go.mod
 go.sum
+/vendor
