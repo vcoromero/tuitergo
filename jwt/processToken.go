@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/vcoromero/tuitergo/db"
 	"github.com/vcoromero/tuitergo/models"
 )
 
@@ -27,7 +28,12 @@ func ProcessToken(tk string, JWTSign string) (*models.Claim, bool, string, error
 	})
 
 	if err == nil {
-		//rutina que chequea contra la db
+		_, found, _ := db.CheckedIfUserExist(claims.Email)
+		if found {
+			Email = claims.Email
+			UserID = claims.ID.Hex()
+		}
+		return &claims, found, UserID, nil
 	}
 
 	if !tkn.Valid {

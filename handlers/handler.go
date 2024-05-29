@@ -41,7 +41,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 	case "GET":
 		fmt.Println("Processing GET request")
 		switch path {
-		// Añade tus rutas GET aquí
+		case "show-profile":
+			return routers.ShowProfile(request)
 		default:
 			fmt.Println("Unknown GET route")
 		}
