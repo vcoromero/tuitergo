@@ -18,7 +18,7 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 	var res models.ResponseAPI
 	res.Status = 400
 
-	isOk, statusCode, msg, _ := authorizationValidate(ctx, request)
+	isOk, statusCode, msg, claim := authorizationValidate(ctx, request)
 	if !isOk {
 		fmt.Println("Authorization failed")
 		res.Status = statusCode
@@ -49,7 +49,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 	case "PUT":
 		fmt.Println("Processing PUT request")
 		switch path {
-		// Añade tus rutas PUT aquí
+		case "update-profile":
+			return routers.UpdateProfile(ctx, claim)
 		default:
 			fmt.Println("Unknown PUT route")
 		}
