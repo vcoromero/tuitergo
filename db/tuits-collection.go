@@ -85,31 +85,31 @@ func DeleteTuit(id string, user_id string) error {
 	return err
 }
 
-func GetTuitsFromFollowers(id string, page int64) ([]*models.GetTuitsFromFollowers, bool) {
+func GetTuitsFromFollowers(id string, page int64) ([]models.GetTuitsFromFollowers, bool) {
 	ctx := context.TODO()
 
 	db := MongoCN.Database(DatabaseName)
-	col := db.Collection("tuits")
+	col := db.Collection("relationships")
 
 	skip := (page - 1) * 20
 
 	conditions := make([]bson.M, 0)
 	conditions = append(conditions, bson.M{"$match": bson.M{"user_id": id}})
 	conditions = append(conditions, bson.M{
-		"$lookup": bson.M{"from": "tuits",
+		"$lookup": bson.M{
+			"from":         "tuits",
 			"localField":   "user_relationship_id",
 			"foreignField": "user_id",
 			"as":           "tuit",
-		}})
+		},
+	})
 	conditions = append(conditions, bson.M{"$unwind": "$tuit"})
 	conditions = append(conditions, bson.M{"$sort": bson.M{"tuit.created_at": -1}})
 	conditions = append(conditions, bson.M{"$skip": skip})
 	conditions = append(conditions, bson.M{"$limit": 20})
 
-	var result []*models.GetTuitsFromFollowers
-
+	var result []models.GetTuitsFromFollowers
 	cursor, err := col.Aggregate(ctx, conditions)
-
 	if err != nil {
 		return result, false
 	}

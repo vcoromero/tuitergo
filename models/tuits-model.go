@@ -24,12 +24,12 @@ type GetTuitsFromUser struct {
 }
 
 type GetTuitsFromFollowers struct {
-	ID                 primitive.ObjectID `bson:"_id" json:"_id,omitempty"`
+	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	UserId             string             `bson:"user_id" json:"user_id,omitempty"`
 	UserRelationshipId string             `bson:"user_relationship_id" json:"user_relationship_id,omitempty"`
 	Tuit               struct {
-		ID         string    `bson:"_id" json:"_id,omitempty"`
-		Message    string    `bson:"message" json:"message,omitempty"`
-		Created_at time.Time `bson:"created_at" json:"created_at,omitempty"`
-	}
+		ID        string    `bson:"_id" json:"id"`
+		Message   string    `bson:"message" json:"message"`
+		CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	} `bson:"tuit" json:"tuit"`
 }

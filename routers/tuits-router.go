@@ -141,10 +141,12 @@ func GetTuitsFromFollowers(request events.APIGatewayProxyRequest, claim models.C
 	resJson, err := json.Marshal(tuits)
 	if err != nil {
 		r.Status = 500
-		r.Message = "Error trying to parse the tuits data to json" + err.Error()
+		r.Message = "Error trying to parse the tuits data to json: " + err.Error()
+		return r
 	}
 
 	r.Status = 200
 	r.Message = string(resJson)
+	fmt.Println("Response:", r) // Mensaje de depuración
 	return r
 }
