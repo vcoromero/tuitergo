@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/vcoromero/tuitergo/db"
 	"github.com/vcoromero/tuitergo/models"
 )
@@ -47,5 +49,45 @@ func Insert(ctx context.Context, claim models.Claim) models.ResponseAPI {
 	r.Status = 200
 	r.Message = "Tuit registered!"
 	fmt.Println(r.Message)
+	return r
+}
+
+func GetTuitsFromUser(request events.APIGatewayProxyRequest) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 200
+	fmt.Println("Entered to get tuits from user")
+
+	ID := request.QueryStringParameters["id"]
+	bodyPage := request.QueryStringParameters["page"]
+
+	if len(ID) < 1 {
+		r.Message = "id parameter is required"
+		return r
+	}
+	if len(bodyPage) < 1 {
+		bodyPage = "1"
+	}
+
+	page, err := strconv.Atoi(bodyPage)
+	if err != nil {
+		r.Message = "page parameter must be a number"
+		return r
+	}
+
+	tuits, correct := db.GetTuitsFromUser(ID, int64(page))
+	if !correct {
+		r.Message = "Error occured trying to get tuits from user"
+		return r
+	}
+
+	resJson, err := json.Marshal(tuits)
+	if err != nil {
+		r.Status = 500
+		r.Message = "Error trying to parse the tuits data to json" + err.Error()
+		return r
+	}
+
+	r.Status = 200
+	r.Message = string(resJson)
 	return r
 }

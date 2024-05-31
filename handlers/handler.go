@@ -45,6 +45,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 		switch path {
 		case "show-profile":
 			return routers.ShowProfile(request)
+		case "get-tuits-from-user":
+			return routers.GetTuitsFromUser(request)
 		default:
 			fmt.Println("Unknown GET route")
 		}
