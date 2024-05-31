@@ -12,7 +12,7 @@ import (
 	"github.com/vcoromero/tuitergo/models"
 )
 
-func Insert(ctx context.Context, claim models.Claim) models.ResponseAPI {
+func CreateTuit(ctx context.Context, claim models.Claim) models.ResponseAPI {
 	var t models.BodyRequestCreate
 	var r models.ResponseAPI
 	r.Status = 400

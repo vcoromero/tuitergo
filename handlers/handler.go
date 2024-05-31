@@ -28,38 +28,33 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 
 	switch method {
 	case "POST":
-		fmt.Println("Processing POST request")
 		switch path {
-		case "register":
-			fmt.Println("Handling register route")
-			return routers.Register(ctx)
+		case "create-user":
+			return routers.CreateUser(ctx)
 		case "login":
 			return routers.Login(ctx)
-		case "tuit":
-			return routers.Insert(ctx, claim)
+		case "create-tuit":
+			return routers.CreateTuit(ctx, claim)
 		default:
 			fmt.Println("Unknown POST route")
 		}
 	case "GET":
-		fmt.Println("Processing GET request")
 		switch path {
-		case "show-profile":
-			return routers.ShowProfile(request)
+		case "get-user":
+			return routers.GetUser(request)
 		case "get-tuits-from-user":
 			return routers.GetTuitsFromUser(request)
 		default:
 			fmt.Println("Unknown GET route")
 		}
 	case "PUT":
-		fmt.Println("Processing PUT request")
 		switch path {
-		case "update-profile":
-			return routers.UpdateProfile(ctx, claim)
+		case "update-user":
+			return routers.UpdateUser(ctx, claim)
 		default:
 			fmt.Println("Unknown PUT route")
 		}
 	case "DELETE":
-		fmt.Println("Processing DELETE request")
 		switch path {
 		case "delete-tuit":
 			return routers.DeleteTuit(request, claim)
@@ -76,7 +71,7 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 func authorizationValidate(ctx context.Context, request events.APIGatewayProxyRequest) (bool, int, string, models.Claim) {
 	path := ctx.Value(models.Key("path")).(string)
 	fmt.Println("Authorization validation for path:", path)
-	if path == "register" || path == "login" || path == "getAvatar" || path == "getBanner" {
+	if path == "create-user" || path == "login" || path == "getAvatar" || path == "getBanner" {
 		fmt.Println("Public endpoint, no authorization required")
 		return true, 200, "", models.Claim{}
 	}
