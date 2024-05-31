@@ -2,12 +2,14 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/vcoromero/tuitergo/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -65,6 +67,72 @@ func CreateUser(u models.User) (string, bool, error) {
 	ObjtId, _ := result.InsertedID.(primitive.ObjectID)
 
 	return ObjtId.String(), true, nil
+}
+func GetUsers(id string, page int64, search string, usertype string) ([]*models.User, bool) {
+	ctx := context.TODO()
+	db := MongoCN.Database(DatabaseName)
+	col := db.Collection("users")
+
+	var results []*models.User
+
+	options := options.Find()
+	options.SetLimit(20)
+	options.SetSkip((page - 1) * 20)
+
+	query := bson.M{
+		"name": bson.M{"$regex": `(?i)` + search},
+	}
+
+	cursor, err := col.Find(ctx, query, options)
+	if err != nil {
+		return results, false
+	}
+
+	var join bool
+
+	for cursor.Next(ctx) {
+		var row models.User
+
+		err := cursor.Decode(&row)
+		if err != nil {
+			fmt.Println("Decode = " + err.Error())
+			return results, false
+		}
+
+		var r models.Relationship
+		r.UserId = id
+		r.UserRelationshipId = row.ID.Hex()
+
+		join = false
+		found := GetRelationship(r)
+
+		if usertype == "new" && !found {
+			join = true
+		}
+		if usertype == "follow" && !found {
+			join = true
+		}
+
+		if r.UserRelationshipId == id {
+			join = false
+		}
+
+		if join {
+			row.Password = ""
+			results = append(results, &row)
+		}
+	}
+
+	err = cursor.Err()
+
+	if err != nil {
+		fmt.Println("cur.Err() = " + err.Error())
+		return results, false
+	}
+
+	cursor.Close(ctx)
+
+	return results, true
 }
 
 func UpdateUser(u models.User, id string) (bool, error) {

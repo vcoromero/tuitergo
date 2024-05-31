@@ -10,6 +10,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -170,7 +171,7 @@ func CreateUser(ctx context.Context) models.ResponseAPI {
 func UpdateUser(ctx context.Context, claim models.Claim) models.ResponseAPI {
 	var r models.ResponseAPI
 	r.Status = 400
-	fmt.Println("Entered to show profile")
+	fmt.Println("Entered to update user")
 
 	var t models.User
 
@@ -374,4 +375,42 @@ func downloadFromS3(ctx context.Context, svc *s3.Client, filename string) (*byte
 
 	buffer := bytes.NewBuffer(file)
 	return buffer, nil
+}
+
+func GetUsers(request events.APIGatewayProxyRequest, claim models.Claim) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 400
+
+	page := request.QueryStringParameters["page"]
+	userType := request.QueryStringParameters["type"]
+	search := request.QueryStringParameters["search"]
+
+	UserId := claim.ID.Hex()
+
+	if len(page) == 0 {
+		page = "1"
+	}
+
+	pageTemp, err := strconv.Atoi(page)
+	if err != nil {
+		r.Message = "Page must be string " + err.Error()
+		return r
+	}
+
+	users, status := db.GetUsers(UserId, int64(pageTemp), search, userType)
+	if !status {
+		r.Message = "Error occurred trying to get users"
+		return r
+	}
+
+	resJson, err := json.Marshal(users)
+	if err != nil {
+		r.Status = 500
+		r.Message = "Error occurred trying to parse json"
+		return r
+	}
+
+	r.Status = 200
+	r.Message = string(resJson)
+	return r
 }

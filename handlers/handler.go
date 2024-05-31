@@ -56,6 +56,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.GetImage(ctx, "B", request, claim)
 		case "get-relationship":
 			return routers.GetRelationship(request, claim)
+		case "get-users":
+			return routers.GetUsers(request, claim)
 		default:
 			fmt.Println("Unknown GET route")
 		}
