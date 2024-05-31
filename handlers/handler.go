@@ -36,7 +36,7 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 		case "login":
 			return routers.Login(ctx)
 		case "tuit":
-			return routers.InserTuit(ctx, claim)
+			return routers.Insert(ctx, claim)
 		default:
 			fmt.Println("Unknown POST route")
 		}
