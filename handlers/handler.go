@@ -48,6 +48,10 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.GetUser(request)
 		case "get-tuits-from-user":
 			return routers.GetTuitsFromUser(request)
+		case "get-avatar-from-user":
+			return routers.GetImage(ctx, "A", request, claim)
+		case "get-banner-from-user":
+			return routers.GetImage(ctx, "B", request, claim)
 		default:
 			fmt.Println("Unknown GET route")
 		}

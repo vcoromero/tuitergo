@@ -14,9 +14,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/vcoromero/tuitergo/awsgo"
 	"github.com/vcoromero/tuitergo/db"
 	"github.com/vcoromero/tuitergo/jwt"
 	"github.com/vcoromero/tuitergo/models"
@@ -87,7 +89,7 @@ func Login(ctx context.Context) models.ResponseAPI {
 
 func GetUser(request events.APIGatewayProxyRequest) models.ResponseAPI {
 	var r models.ResponseAPI
-	r.Status = 200
+	r.Status = 400
 	fmt.Println("Entered to show profile")
 	ID := request.QueryStringParameters["id"]
 	if len(ID) < 1 {
@@ -300,4 +302,76 @@ func UploadImage(ctx context.Context, uploadType string, request events.APIGatew
 	r.Status = 200
 	r.Message = "Image file uploaded!!"
 	return r
+}
+
+func GetImage(ctx context.Context, uploadType string, request events.APIGatewayProxyRequest, claim models.Claim) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 400
+
+	ID := request.QueryStringParameters["id"]
+	if len(ID) < 1 {
+		r.Message = "id parameter is required"
+		return r
+	}
+
+	user, err := db.GetUser(ID)
+
+	if err != nil {
+		r.Message = "User not found " + err.Error()
+		return r
+	}
+
+	var filename string
+
+	switch uploadType {
+	case "A":
+		filename = user.Avatar
+		user.Avatar = filename
+	case "B":
+		filename = user.Banner
+		user.Banner = filename
+	}
+
+	fmt.Println("filename: " + filename)
+	svc := s3.NewFromConfig(awsgo.Cfg)
+
+	file, err := downloadFromS3(ctx, svc, filename)
+
+	if err != nil {
+		r.Status = 500
+		r.Message = "Error occurred downloading from S3 " + err.Error()
+	}
+
+	r.CustomResponse = &events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Body:       file.String(),
+		Headers: map[string]string{
+			"Content-Type":        "application/octet-stream",
+			"Content-Disposition": fmt.Sprintf("attachment; filename=\"%s\"", filename),
+		},
+	}
+	return r
+}
+
+func downloadFromS3(ctx context.Context, svc *s3.Client, filename string) (*bytes.Buffer, error) {
+	bucket := ctx.Value(models.Key("bucketName")).(string)
+
+	obj, err := svc.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer obj.Body.Close()
+
+	fmt.Println("bucketname = " + bucket)
+
+	file, err := io.ReadAll(obj.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer := bytes.NewBuffer(file)
+	return buffer, nil
 }
