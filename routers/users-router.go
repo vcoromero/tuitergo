@@ -1,13 +1,22 @@
 package routers
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/vcoromero/tuitergo/db"
 	"github.com/vcoromero/tuitergo/jwt"
 	"github.com/vcoromero/tuitergo/models"
@@ -183,5 +192,112 @@ func UpdateUser(ctx context.Context, claim models.Claim) models.ResponseAPI {
 
 	r.Status = 200
 	r.Message = "Update user succesfully"
+	return r
+}
+
+type readSeeker struct {
+	io.Reader
+}
+
+func (rs *readSeeker) Seek(offset int64, whence int) (int64, error) {
+	return 0, nil
+}
+
+func UploadImage(ctx context.Context, uploadType string, request events.APIGatewayProxyRequest, claim models.Claim) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 400
+	UserId := claim.ID.Hex()
+
+	var filename string
+	var user models.User
+
+	bucket := aws.String(ctx.Value(models.Key("bucketName")).(string))
+
+	switch uploadType {
+	case "A":
+		filename = "avatars/" + UserId + ".jpg"
+		user.Avatar = filename
+	case "B":
+		filename = "banners/" + UserId + ".jpg"
+		user.Banner = filename
+	}
+
+	contentType := request.Headers["Content-Type"]
+	fmt.Println("Content-Type: ", contentType)
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		r.Status = 500
+		r.Message = "mediatype error: " + err.Error()
+		return r
+	}
+
+	if strings.HasPrefix(mediaType, "multipart/") {
+		body, err := base64.StdEncoding.DecodeString(request.Body)
+		if err != nil {
+			r.Status = 500
+			r.Message = err.Error()
+			return r
+		}
+
+		mr := multipart.NewReader(bytes.NewReader(body), params["boundary"])
+		p, err := mr.NextPart()
+		if err != nil && err != io.EOF {
+			r.Status = 500
+			r.Message = err.Error()
+			return r
+		}
+
+		if err != io.EOF {
+			if p.FileName() != "" {
+
+				buff := bytes.NewBuffer(nil)
+				if _, err := io.Copy(buff, p); err != nil {
+					r.Status = 500
+					r.Message = err.Error()
+					return r
+				}
+
+				session, err := session.NewSession(&aws.Config{
+					Region: aws.String("us-east-1"),
+				})
+
+				if err != nil {
+					r.Status = 500
+					r.Message = err.Error()
+					return r
+				}
+
+				uploader := s3manager.NewUploader(session)
+				_, err = uploader.Upload(&s3manager.UploadInput{
+					Bucket: bucket,
+					Key:    aws.String(filename),
+					Body:   &readSeeker{buff},
+				})
+
+				if err != nil {
+					r.Status = 500
+					r.Message = err.Error()
+					return r
+				}
+
+			}
+		}
+
+		status, err := db.UpdateUser(user, UserId)
+
+		if err != nil || !status {
+			r.Status = 400
+			r.Message = "Error occured tryign to update user " + err.Error()
+			return r
+		}
+
+	} else {
+		r.Message = "Must be an image with 'Content-Type' type"
+		r.Status = 400
+		return r
+	}
+
+	r.Status = 200
+	r.Message = "Image file uploaded!!"
 	return r
 }

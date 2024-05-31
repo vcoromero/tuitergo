@@ -35,6 +35,10 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.Login(ctx)
 		case "create-tuit":
 			return routers.CreateTuit(ctx, claim)
+		case "upload-avatar":
+			return routers.UploadImage(ctx, "A", request, claim)
+		case "upload-banner":
+			return routers.UploadImage(ctx, "B", request, claim)
 		default:
 			fmt.Println("Unknown POST route")
 		}
