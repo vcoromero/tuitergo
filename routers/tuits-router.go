@@ -114,3 +114,37 @@ func DeleteTuit(request events.APIGatewayProxyRequest, claim models.Claim) model
 	r.Message = "Tuit deleted!!"
 	return r
 }
+
+func GetTuitsFromFollowers(request events.APIGatewayProxyRequest, claim models.Claim) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 400
+
+	user_id := claim.ID.Hex()
+
+	bodyPage := request.QueryStringParameters["page"]
+	if len(bodyPage) < 1 {
+		bodyPage = "1"
+	}
+
+	page, err := strconv.Atoi(bodyPage)
+	if err != nil {
+		r.Message = "page parameter must be a number"
+		return r
+	}
+
+	tuits, correct := db.GetTuitsFromFollowers(user_id, int64(page))
+	if !correct {
+		r.Message = "Error occured trying to get tuits from followers"
+		return r
+	}
+
+	resJson, err := json.Marshal(tuits)
+	if err != nil {
+		r.Status = 500
+		r.Message = "Error trying to parse the tuits data to json" + err.Error()
+	}
+
+	r.Status = 200
+	r.Message = string(resJson)
+	return r
+}

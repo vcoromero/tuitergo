@@ -58,6 +58,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.GetRelationship(request, claim)
 		case "get-users":
 			return routers.GetUsers(request, claim)
+		case "get-tuits-from-followers":
+			return routers.GetTuitsFromFollowers(request, claim)
 		default:
 			fmt.Println("Unknown GET route")
 		}
