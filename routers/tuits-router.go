@@ -91,3 +91,26 @@ func GetTuitsFromUser(request events.APIGatewayProxyRequest) models.ResponseAPI 
 	r.Message = string(resJson)
 	return r
 }
+
+func DeleteTuit(request events.APIGatewayProxyRequest, claim models.Claim) models.ResponseAPI {
+	var r models.ResponseAPI
+	r.Status = 200
+	fmt.Println("Entered to get tuits from user")
+
+	ID := request.QueryStringParameters["id"]
+
+	if len(ID) < 1 {
+		r.Message = "id parameter is required"
+		return r
+	}
+
+	err := db.DeleteTuit(ID, claim.ID.Hex())
+	if err != nil {
+		r.Message = "Error occured trying to delete tuit " + err.Error()
+		return r
+	}
+
+	r.Status = 200
+	r.Message = "Tuit deleted!!"
+	return r
+}

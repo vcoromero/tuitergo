@@ -61,7 +61,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 	case "DELETE":
 		fmt.Println("Processing DELETE request")
 		switch path {
-		// Añade tus rutas DELETE aquí
+		case "delete-tuit":
+			return routers.DeleteTuit(request, claim)
 		default:
 			fmt.Println("Unknown DELETE route")
 		}

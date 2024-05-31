@@ -67,3 +67,20 @@ func GetTuitsFromUser(id string, page int64) ([]*models.GetTuitsFromUser, bool) 
 
 	return results, true
 }
+
+func DeleteTuit(id string, user_id string) error {
+	ctx := context.TODO()
+
+	db := MongoCN.Database(DatabaseName)
+	col := db.Collection("tuits")
+
+	objId, _ := primitive.ObjectIDFromHex(id)
+
+	condition := bson.M{
+		"_id":     objId,
+		"user_id": user_id,
+	}
+
+	_, err := col.DeleteOne(ctx, condition)
+	return err
+}
