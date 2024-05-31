@@ -39,6 +39,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.UploadImage(ctx, "A", request, claim)
 		case "upload-banner":
 			return routers.UploadImage(ctx, "B", request, claim)
+		case "create-relationship":
+			return routers.CreateRelationship(ctx, request, claim)
 		default:
 			fmt.Println("Unknown POST route")
 		}
@@ -52,6 +54,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 			return routers.GetImage(ctx, "A", request, claim)
 		case "get-banner-from-user":
 			return routers.GetImage(ctx, "B", request, claim)
+		case "get-relationship":
+			return routers.GetRelationship(request, claim)
 		default:
 			fmt.Println("Unknown GET route")
 		}
@@ -66,6 +70,8 @@ func Handlers(ctx context.Context, request events.APIGatewayProxyRequest) models
 		switch path {
 		case "delete-tuit":
 			return routers.DeleteTuit(request, claim)
+		case "delete-relationship":
+			return routers.DeleteRelationship(request, claim)
 		default:
 			fmt.Println("Unknown DELETE route")
 		}
