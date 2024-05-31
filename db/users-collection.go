@@ -109,7 +109,7 @@ func GetUsers(id string, page int64, search string, usertype string) ([]*models.
 		if usertype == "new" && !found {
 			join = true
 		}
-		if usertype == "follow" && !found {
+		if usertype == "follow" && found {
 			join = true
 		}
 
